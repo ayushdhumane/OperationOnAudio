@@ -1,0 +1,101 @@
+import librosa
+import soundfile as sf
+class AudioFile():    #this class will use as instance of audio and hold various funcition and Data used for M.L and DataProcessing of Audio 
+    def __init__(self,filepath=None):
+        self.filepath=filepath
+        self.waveform,self.sample_rate,self.time_in_sec=None,None,None
+        if filepath!=None:
+            self.waveform,self.sample_rate=librosa.load(filepath)
+            self.time_in_sec=len(self.waveform)/self.sample_rate
+
+    def _nearest_eligibal_sr(self,x):
+        a=[8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100,48000]
+        if x in a:
+            return(x)
+        elif x>48000:
+            return(48000)
+        else:
+            for i in a:
+                if x>i:
+                    b=0
+                else:
+                    return(i)
+
+    def execute(self):             #Execute/Apply AudioFile()|instance in Analog Audio And Save in Exiting/Custom File/Space
+        if self.filepath==None:
+            eee='''Please add FILEPATH to the instance    ::::
+            Through this Code 
+            >>> name_of_AudioFile()_instance.filepath  =  custom//existing_orginal_filepath'''
+            print(eee)
+            self.filepath=input('Enter A Diseared Filepath :')
+        eli_sr=self._nearest_eligibal_sr(self.sample_rate)
+        resampled_waveform=self._resampling(eli_sr)
+        sf.write(self.filepath,resampled_waveform,eli_sr)
+    
+    def _resampling(self,re_sample):
+        new_sr = re_sample  # Example: change to 22,050 Hz
+        # Resample the audio
+        audio_resampled = librosa.resample(self.waveform, orig_sr=self.sample_rate, target_sr=new_sr)
+        return(audio_resample)
+                                    
+    def __add__(self,audio2):       #For concatenate/add audio files or segments one after the other 
+        audio01=None
+        audio02=None
+        new_sr= max([self.sample_rate,audio2.sample_rate])
+        if self.sample_rate>audio2.sample_rate:
+            audio02=audio2._resampling(self.sample_rate)
+        elif self.sample_rate==audio2.sample_rate:
+            pass
+        else:
+            audio01=self._resampling(audio2.sample_rate)
+        new_audio=AudioFile()
+        new_audio.waveform=np.concatenate((audio01,audio02))
+        new_audio.sample_rate=new_sr
+        return(new_audio)
+
+    def __len__(self):
+        return(len(self.waveform))
+
+    def __iadd__(self,audio2):      #For self manipulation of [AudioFile() add AudioFile() for self in backward ]///[int() add sample in self in backward ]///[float() add no_of_second() in self in backward ]
+        if type(audio2)==type(1):
+            self.waveform=np.concatenate((self.waveform,np.zeros(audio2)))
+        elif isintance(audio2,AudioFile()):
+            audio02=audio2._resampling(self.sample_rate)
+            self.waveform=np.concatenate((self.waveform,audio02))
+        elif type(audio2)==float():
+            self.waveform=np.concatenate((self.waveform,np.zeros(int(audio2*self.sample_rate))))
+        else:
+            raise TypeError('||||||   ::::    <  Value Type Should a instance of AudioFile()/int()/float() >    :::: \n AudioFile() and int() for add that number of that sampling And float add no. of extra second in backward      ||||||')
+
+    def __gt__(self,audio2):
+        #Mix Audio in less than Side into Self/Original and size/time is of Self/Original 
+        #return instance of AudioFile() and Not in Boolen although is camparisational operator
+        tim1=self.time_in_sec
+        tim2=audio2.time_in_sec
+        if tim1==time2:
+            audio02=audio2._resampling(self.sample_rate)
+            new_waveform=(self.waveform.astype(np.int32)+audio02.astype(np.int32))//2
+            ans=AudioFile()
+            ans.waveform=new_waveform.astype(np.int16)
+            ans.sample_rate=self.sample_rate
+            return(ans)
+        elif tim1>time2:
+            audio02=audio2._resampling(self.sample_rate)
+            new_waveform=(self.waveform.astype(np.int32)+np.concatenate(audio02.astype(np.int32),np.zeros(len(self.waveform)-len(audio02))))//2
+            ans=AudioFile()
+            ans.waveform=new_waveform.astype(np.int16)
+            ans.sample_rate=self.sample_rate
+            return(ans)
+        else:
+            audio02=audio2._resampling(self.sample_rate)
+            new_waveform=(self.waveform.astype(np.int32)+audio02[:len(self.waveform)].astype(np.int32))//2
+            ans=AudioFile()
+            ans.waveform=new_waveform.astype(np.int16)
+            ans.sample_rate=self.sample_rate
+            return(ans)
+            
+    def __mul__(self,multiple):
+        ans=AudioFile()
+        ans.waveform=self.waveform
+        ans.sample_rate=int((self.sample_rate)*multiple)
+        return(ans)
